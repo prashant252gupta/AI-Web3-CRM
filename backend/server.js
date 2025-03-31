@@ -9,6 +9,7 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 process.on("SIGTERM", () => {
-  console.log("SIGTERM received, but keeping server alive...");
+  console.log("SIGTERM received, shutting down gracefully...");
 });
-setInterval(() => console.log("Server is still running..."), 60000); // Logs every minute
+
+setInterval(() => console.log("Server is still running..."), 60000);
