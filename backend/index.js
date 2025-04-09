@@ -1,9 +1,17 @@
 const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+
 const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("AI Web3 CRM Backend is running!");
+  res.send("AI Web3 CRM backend is running!");
 });
 
-module.exports = app;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
