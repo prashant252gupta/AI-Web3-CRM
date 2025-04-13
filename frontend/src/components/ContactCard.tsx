@@ -1,27 +1,24 @@
 'use client';
-export default function ContactCard({
-  contact,
-  onClick,
-}: {
-  contact: {
-    name: string;
-    wallet: string;
-    tags: string[];
-  };
+import React, { useState } from 'react';
+
+type ContactCardProps = {
+  contact: any;
   onClick: () => void;
-}) {
+};
+
+export default function ContactCard({ contact, onClick }: ContactCardProps) {
   return (
     <div
-      className="bg-white shadow-md rounded-lg p-4 cursor-pointer hover:shadow-lg transition"
       onClick={onClick}
+      className="cursor-pointer bg-white shadow-md rounded-lg p-4 border-l-4 border-blue-500 hover:shadow-lg transition"
     >
-      <h3 className="text-lg font-semibold mb-2">{contact.name}</h3>
-      <p className="text-sm text-gray-500 mb-2">{contact.wallet}</p>
-      <div className="flex flex-wrap gap-2">
-        {contact.tags.map((tag, index) => (
+      <h3 className="text-lg font-semibold mb-1">{contact.name}</h3>
+      <p className="text-sm text-gray-600 mb-1">{contact.email}</p>
+      <div className="flex flex-wrap gap-1 mt-2">
+        {contact.tags?.map((tag: string, idx: number) => (
           <span
-            key={index}
-            className="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs"
+            key={idx}
+            className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
           >
             {tag}
           </span>

@@ -1,30 +1,28 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ContactCard from '@/components/ContactCard';
 import NewContactModal from '@/components/NewContactModal';
 import ContactDetailModal from '@/components/ContactDetailModal';
 
-const dummyContacts = [
-  {
-    name: 'Alice Nakamoto',
-    wallet: '0x123...abcd',
-    tags: ['Investor', 'Polygon', 'DAO'],
-  },
-  {
-    name: 'Bob Web3',
-    wallet: '0x456...efgh',
-    tags: ['DeFi', 'Builder', 'Angel'],
-  },
-  {
-    name: 'Charlie Ledger',
-    wallet: '0x789...ijkl',
-    tags: ['NFT', 'Advisor'],
-  },
-];
-
 export default function ContactsPage() {
+  const [contacts, setContacts] = useState<any[]>([]);
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState<any>(null);
+
+  // Fetch contacts from backend
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/contacts');
+        const data = await res.json();
+        setContacts(data);
+      } catch (error) {
+        console.error('Error fetching contacts:', error);
+      }
+    };
+
+    fetchContacts();
+  }, []);
 
   return (
     <div>
@@ -39,8 +37,14 @@ export default function ContactsPage() {
       </div>
 
       {showNewModal && (
-        <NewContactModal onClose={() => setShowNewModal(false)} />
+        <NewContactModal
+          onClose={() => setShowNewModal(false)}
+          onContactAdded={(newContact: any) =>
+            setContacts((prev) => [...prev, newContact])
+          }
+        />
       )}
+
       {selectedContact && (
         <ContactDetailModal
           contact={selectedContact}
@@ -49,9 +53,9 @@ export default function ContactsPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {dummyContacts.map((contact, index) => (
+        {contacts.map((contact) => (
           <ContactCard
-            key={index}
+            key={contact._id}
             contact={contact}
             onClick={() => setSelectedContact(contact)}
           />

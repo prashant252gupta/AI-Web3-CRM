@@ -56,6 +56,18 @@ app.post('/api/deals', async (req, res) => {
   }
 });
 
+// UPDATE a deal
+app.put('/api/deals/:_id', async (req, res) => {
+  try {
+    const updatedDeal = await Deal.findByIdAndUpdate(req.params._id, req.body, {
+      new: true,
+    });
+    res.json(updatedDeal);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

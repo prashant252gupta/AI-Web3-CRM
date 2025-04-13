@@ -1,32 +1,28 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
+
+type ContactDetailModalProps = {
+  contact: any;
+  onClose: () => void;
+};
 
 export default function ContactDetailModal({
   contact,
   onClose,
-}: {
-  contact: {
-    name: string;
-    wallet: string;
-    tags: string[];
-  };
-  onClose: () => void;
-}) {
+}: ContactDetailModalProps) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">{contact.name}</h2>
-          <button onClick={onClose} className="text-gray-500 text-xl">×</button>
-        </div>
-        <p className="mb-2"><strong>Wallet:</strong> {contact.wallet}</p>
-        <p className="mb-4"><strong>Tags:</strong> {contact.tags.join(', ')}</p>
-        
-        <div className="mt-6 flex justify-end">
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-            onClick={onClose}
-          >
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-md shadow-md w-[90%] max-w-md">
+        <h3 className="text-xl font-semibold mb-4">Contact Details</h3>
+        <p><strong>Name:</strong> {contact.name}</p>
+        <p><strong>Email:</strong> {contact.email}</p>
+        <p><strong>Phone:</strong> {contact.phone}</p>
+        <p><strong>Company:</strong> {contact.company}</p>
+        <p><strong>Tags:</strong> {contact.tags?.join(', ')}</p>
+        <p><strong>Notes:</strong> {contact.notes}</p>
+        <p><strong>Created:</strong> {new Date(contact.createdAt).toLocaleString()}</p>
+        <div className="mt-4 flex justify-end">
+          <button onClick={onClose} className="text-white bg-gray-600 px-4 py-2 rounded">
             Close
           </button>
         </div>

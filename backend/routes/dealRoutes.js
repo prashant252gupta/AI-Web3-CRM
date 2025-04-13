@@ -18,10 +18,20 @@ router.post('/', async (req, res) => {
 });
 
 // GET single deal
-router.get('/:id', async (req, res) => {
-    const deal = await Deal.findById(req.params.id);
+router.get('/:_id', async (req, res) => {
+    const deal = await Deal.findById(req.params._id);
     if (deal) res.json(deal);
     else res.status(404).json({ message: 'Deal not found' });
+});
+
+router.put('/api/deals/:_id', async (req, res) => {
+    try {
+        const updatedDeal = await Deal.findByIdAndUpdate(req.params._id, req.body, { new: true });
+        res.json(updatedDeal);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error updating deal');
+    }
 });
 
 export default router;
