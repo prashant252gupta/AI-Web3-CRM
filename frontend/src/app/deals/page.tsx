@@ -56,6 +56,17 @@ export default function DealsPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this deal?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/deals/${id}`);
+        setDeals(deals.filter(deal => deal._id !== id));
+      } catch (err) {
+        console.error('Failed to delete deal:', err);
+      }
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -212,11 +223,20 @@ export default function DealsPage() {
             <p className="text-sm text-gray-600 mb-1">Status: {deal.status}</p>
             <p className="text-md font-bold text-green-700">{deal.value}</p>
 
+            {/* Edit Button */}
             <button
               onClick={() => setEditingDeal(deal)}
-              className="absolute top-2 right-2 text-xs px-2 py-1 bg-gray-200 rounded"
+              className="absolute top-2 right-14 text-xs px-2 py-1 bg-gray-200 rounded"
             >
               Edit
+            </button>
+
+            {/* Delete Button */}
+            <button
+              onClick={() => handleDelete(deal._id)}
+              className="absolute top-2 right-2 text-red-600 hover:text-red-800 text-xs px-2 py-1 bg-gray-100 rounded"
+            >
+              Delete
             </button>
           </div>
         ))}

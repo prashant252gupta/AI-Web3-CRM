@@ -68,6 +68,16 @@ app.put('/api/deals/:_id', async (req, res) => {
   }
 });
 
+// DELETE a deal by ID
+app.delete('/api/deals/:_id', async (req, res) => {
+  try {
+    await Deal.findByIdAndDelete(req.params._id);
+    res.json({ message: 'Deal deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
