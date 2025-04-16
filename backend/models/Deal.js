@@ -1,5 +1,4 @@
-// backend/models/Deal.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const dealSchema = new mongoose.Schema({
     title: String,
@@ -12,4 +11,5 @@ const dealSchema = new mongoose.Schema({
     },
 });
 
-module.exports = mongoose.model('Deal', dealSchema);
+const Deal = mongoose.model('Deal', dealSchema);
+export default Deal;
