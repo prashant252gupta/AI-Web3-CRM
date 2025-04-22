@@ -1,82 +1,85 @@
 'use client';
-import { useState } from 'react';
+import React from 'react';
 
-export default function NewDealModal({ onClose, onSave }: {
+interface NewDeal {
+  title: string;
+  status: string;
+  value: string;
+  stage: string;
+}
+
+interface NewDealModalProps {
+  newDeal: NewDeal;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onSubmit: () => void;
   onClose: () => void;
-  onSave: (deal: {
-    title: string;
-    value: string;
-    stage: string;
-    status: string;
-  }) => void;
-}) {
-  const [title, setTitle] = useState('');
-  const [value, setValue] = useState('');
-  const [stage, setStage] = useState('Initial Contact');
-  const [status, setStatus] = useState('In Progress');
+}
 
-  const handleSubmit = () => {
-    onSave({ title, value, stage, status });
-    onClose();
-  };
-
+const NewDealModal: React.FC<NewDealModalProps> = ({
+  newDeal,
+  onChange,
+  onSubmit,
+  onClose
+}) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
-        <h2 className="text-xl font-bold mb-4">Add New Deal</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-10">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md">
+        <h3 className="text-xl font-semibold mb-4">New Deal</h3>
 
         <input
-          type="text"
-          placeholder="Deal Title"
+          name="title"
+          placeholder="Title"
+          value={newDeal.title}
+          onChange={onChange}
           className="w-full mb-3 p-2 border rounded"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <input
-          type="text"
-          placeholder="Value ($)"
-          className="w-full mb-3 p-2 border rounded"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
         />
 
         <select
+          name="status"
+          value={newDeal.status}
+          onChange={onChange}
           className="w-full mb-3 p-2 border rounded"
-          value={stage}
-          onChange={(e) => setStage(e.target.value)}
         >
-          <option>Initial Contact</option>
-          <option>Negotiation</option>
-          <option>Due Diligence</option>
-          <option>Closed</option>
+          <option value="">Select Status</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Won">Won</option>
+          <option value="Lost">Lost</option>
         </select>
+
+        <input
+          type="number"
+          name="value"
+          placeholder="Value"
+          value={newDeal.value}
+          onChange={onChange}
+          className="w-full mb-3 p-2 border rounded"
+        />
 
         <select
-          className="w-full mb-4 p-2 border rounded"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          name="stage"
+          value={newDeal.stage}
+          onChange={onChange}
+          className="w-full mb-3 p-2 border rounded"
         >
-          <option>In Progress</option>
-          <option>Won</option>
-          <option>Lost</option>
+          <option value="">Select Stage</option>
+          <option value="Initial Contact">Initial Contact</option>
+          <option value="Discovery">Discovery</option>
+          <option value="Proposal">Proposal</option>
+          <option value="Negotiation">Negotiation</option>
+          <option value="Closed">Closed</option>
         </select>
 
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="text-gray-600 px-4 py-2 rounded hover:underline"
-          >
+        <div className="flex justify-end space-x-2">
+          <button onClick={onClose} className="bg-gray-300 px-4 py-2 rounded">
             Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Save
+          <button onClick={onSubmit} className="bg-blue-600 text-white px-4 py-2 rounded">
+            Create
           </button>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default NewDealModal;
