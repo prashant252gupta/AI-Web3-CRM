@@ -1,15 +1,11 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import NewDealModal from '@/components/NewDealModal';
 import EditDealModal from '@/components/EditDealModal';
 import DealCard from '@/components/DealCard';
 
-interface ContactOption {
-  _id: string;
-  name: string;
-}
-
+interface ContactOption { _id: string; name: string; }
 interface Deal {
   _id:     string;
   title:   string;
@@ -24,25 +20,33 @@ export default function DealsPage() {
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [newDeal, setNewDeal] = useState<Deal>({
-    _id:        '',
-    title:      '',
-    status:     '',
-    value:      '',
-    stage:      '',
-    contactId:  '',
+    _id:'', title:'', status:'', value:'', stage:'', contactId:''
   });
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
 
+  // search & filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStage, setFilterStage] = useState('');
+
   useEffect(() => {
-    // load contacts and deals
     axios.get<ContactOption[]>('http://localhost:5000/api/contacts')
       .then(res => setContacts(res.data))
       .catch(console.error);
-
     axios.get<Deal[]>('http://localhost:5000/api/deals')
       .then(res => setDeals(res.data))
       .catch(console.error);
   }, []);
+
+  // filtered list
+  const filteredDeals = useMemo(() => {
+    return deals.filter(d => {
+      const matchesSearch = d.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = filterStatus ? d.status === filterStatus : true;
+      const matchesStage  = filterStage  ? d.stage === filterStage   : true;
+      return matchesSearch && matchesStatus && matchesStage;
+    });
+  }, [deals, searchTerm, filterStatus, filterStage]);
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
@@ -54,82 +58,66 @@ export default function DealsPage() {
   };
 
   const handleSubmit = async () => {
-    // strip _id, prepare payload
-    const { _id, ...dealData } = newDeal;
+    const { _id, ...data } = newDeal;
     const payload: any = {
-      title:  dealData.title,
-      status: dealData.status,
-      value:  Number(dealData.value),
-      stage:  dealData.stage,
+      title: data.title,
+      status: data.status,
+      value: Number(data.value),
+      stage: data.stage,
+      ...(data.contactId && { contactId: data.contactId })
     };
-    if (dealData.contactId) {
-      payload.contactId = dealData.contactId;
-    }
-
-    console.log('Submitting deal payload:', payload);
-
     try {
-      const res = await axios.post<Deal>(
-        'http://localhost:5000/api/deals',
-        payload
-      );
-      setDeals([...deals, res.data]);
+      const res = await axios.post<Deal>('http://localhost:5000/api/deals', payload);
+      setDeals(d => [...d, res.data]);
       setShowModal(false);
       setNewDeal({ _id:'', title:'', status:'', value:'', stage:'', contactId:'' });
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message;
-      console.error('Failed to submit deal:', msg);
-      alert(`Error creating deal: ${msg}`);
+    } catch (err) {
+      console.error(err);
+      alert('Error creating deal');
     }
   };
 
   const handleUpdate = async () => {
     if (!editingDeal) return;
-
-    // prepare payload
     const payload: any = {
-      title:  editingDeal.title,
+      title: editingDeal.title,
       status: editingDeal.status,
-      value:  Number(editingDeal.value),
-      stage:  editingDeal.stage,
+      value: Number(editingDeal.value),
+      stage: editingDeal.stage,
+      ...(editingDeal.contactId && { 
+        contactId: typeof editingDeal.contactId === 'object'
+          ? editingDeal.contactId._id
+          : editingDeal.contactId 
+      })
     };
-    if (editingDeal.contactId) {
-      payload.contactId = typeof editingDeal.contactId === 'object'
-        ? editingDeal.contactId._id
-        : editingDeal.contactId;
-    }
-
-    console.log('Updating deal payload:', payload);
-
     try {
       const res = await axios.put<Deal>(
         `http://localhost:5000/api/deals/${editingDeal._id}`,
         payload
       );
-      setDeals(deals.map(d => (d._id === res.data._id ? res.data : d)));
+      setDeals(d => d.map(x => x._id === res.data._id ? res.data : x));
       setEditingDeal(null);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message;
-      console.error('Failed to update deal:', msg);
-      alert(`Error updating deal: ${msg}`);
+    } catch (err) {
+      console.error(err);
+      alert('Error updating deal');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this deal?')) return;
-    try {
-      await axios.delete(`http://localhost:5000/api/deals/${id}`);
-      setDeals(deals.filter(d => d._id !== id));
-    } catch (err) {
-      console.error('Failed to delete deal:', err);
-      alert('Error deleting deal');
+    if (confirm('Delete this deal?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/deals/${id}`);
+        setDeals(d => d.filter(x => x._id !== id));
+      } catch {
+        alert('Error deleting deal');
+      }
     }
   };
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-6 space-y-6">
+      {/* Header + Filters */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 className="text-2xl font-bold">Deals</h2>
         <button
           onClick={() => setShowModal(true)}
@@ -138,8 +126,39 @@ export default function DealsPage() {
           + New Deal
         </button>
       </div>
+      <div className="flex flex-wrap gap-4">
+        <input
+          type="text"
+          placeholder="Search by title…"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="border p-2 rounded flex-1"
+        />
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="">All Status</option>
+          <option>In Progress</option>
+          <option>Won</option>
+          <option>Lost</option>
+        </select>
+        <select
+          value={filterStage}
+          onChange={e => setFilterStage(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="">All Stages</option>
+          <option>Initial Contact</option>
+          <option>Discovery</option>
+          <option>Proposal</option>
+          <option>Negotiation</option>
+          <option>Closed</option>
+        </select>
+      </div>
 
-      {/* New Deal Modal */}
+      {/* Modals */}
       {showModal && (
         <NewDealModal
           contacts={contacts}
@@ -149,8 +168,6 @@ export default function DealsPage() {
           onClose={() => setShowModal(false)}
         />
       )}
-
-      {/* Edit Deal Modal */}
       {editingDeal && (
         <EditDealModal
           contacts={contacts}
@@ -163,7 +180,7 @@ export default function DealsPage() {
 
       {/* Deals Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {deals.map(deal => (
+        {filteredDeals.map(deal => (
           <DealCard
             key={deal._id}
             deal={deal}
