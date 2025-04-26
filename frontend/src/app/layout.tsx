@@ -1,37 +1,22 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import Sidebar from "../components/Sidebar";
+'use client';
+import './globals.css';
+import { WalletProvider } from '@/context/WalletContext';
+import Sidebar from '@/components/Sidebar';
+import ConnectWalletButton from '@/components/ConnectWalletButton';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "AI Web3 CRM",
-  description: "AI-Powered CRM for Web3 Founders",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <div className="flex h-screen">
+      <body className="flex h-screen">
+        <WalletProvider>
           <Sidebar />
-          <main className="flex-1 bg-gray-100 p-6 overflow-y-auto">
-            {children}
+          <main className="flex-1 flex flex-col">
+            <header className="p-4 border-b flex justify-end">
+              <ConnectWalletButton />
+            </header>
+            <div className="p-6 overflow-auto flex-1">{children}</div>
           </main>
-        </div>
+        </WalletProvider>
       </body>
     </html>
   );
