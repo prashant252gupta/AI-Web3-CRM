@@ -1,7 +1,16 @@
-import type { NextConfig } from "next";
+// next.config.ts
+import { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // …any existing config…
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',                    // what client will call
+        destination: 'http://localhost:5000/api/:path*', // your Express server
+      },
+    ];
+  },
 };
 
 export default nextConfig;

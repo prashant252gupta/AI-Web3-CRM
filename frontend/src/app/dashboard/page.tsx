@@ -1,35 +1,44 @@
 'use client';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import SummaryCard from '@/components/SummaryCard';
 import StageBarChart from '@/components/StageBarChart';
 import StatusPieChart from '@/components/StatusPieChart';
 
 interface Contact { _id: string; }
+
 interface Deal {
-  _id: string;
+  _id:    string;
   status: string;
-  value: number;
-  stage: string;
+  value:  number;
+  stage:  string;
 }
 
 export default function DashboardPage() {
+  const { token } = useAuth();
   const [contactsCount, setContactsCount] = useState(0);
-  const [deals, setDeals] = useState<Deal[]>([]);
+  const [deals, setDeals]                 = useState<Deal[]>([]);
 
   useEffect(() => {
+    if (!token) return; // wait for login
+
     // Fetch contacts count
-    axios
-      .get<Contact[]>('http://localhost:5000/api/contacts')
+    api.get<Contact[]>('/contacts')
       .then(res => setContactsCount(res.data.length))
-      .catch(console.error);
+      .catch(err => {
+        console.error('Error fetching contacts count:', err.response?.data || err);
+        alert('Failed to load contacts.');
+      });
 
     // Fetch deals
-    axios
-      .get<Deal[]>('http://localhost:5000/api/deals')
+    api.get<Deal[]>('/deals')
       .then(res => setDeals(res.data))
-      .catch(console.error);
-  }, []);
+      .catch(err => {
+        console.error('Error fetching deals:', err.response?.data || err);
+        alert('Failed to load deals.');
+      });
+  }, [token]);
 
   // Compute metrics
   const totalDeals = deals.length;

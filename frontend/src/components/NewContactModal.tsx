@@ -1,73 +1,135 @@
 'use client';
-import React, { useState } from 'react';
+import { useState } from 'react';
+import api from '@/lib/api';
 
-type NewContactModalProps = {
+interface NewContact {
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  tags: string[];
+  notes: string;
+}
+
+interface NewContactModalProps {
   onClose: () => void;
-  onContactAdded: (newContact: any) => void;
-};
+  onContactAdded: (contact: NewContact & { _id: string }) => void;
+}
 
 export default function NewContactModal({
   onClose,
   onContactAdded,
 }: NewContactModalProps) {
-  const [form, setForm] = useState({
+  const [contact, setContact] = useState<NewContact>({
     name: '',
     email: '',
     phone: '',
     company: '',
-    tags: '',
+    tags: [],
     notes: '',
   });
+  const [tagInput, setTagInput] = useState('');
 
-  const handleChange = (e: any) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // handle any text input
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setContact(prev => ({ ...prev, [name]: value }));
+  };
+
+  // add a tag when user hits Enter
+  const handleTagKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      setContact(prev => ({ ...prev, tags: [...prev.tags, tagInput.trim()] }));
+      setTagInput('');
+    }
   };
 
   const handleSubmit = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/contacts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          tags: form.tags.split(',').map((tag) => tag.trim()),
-        }),
-      });
-
-      const data = await res.json();
-      onContactAdded(data);
+      // Post to /contacts (proxy will rewrite to your Express)
+      const res = await api.post<NewContact & { _id: string }>('/contacts', contact);
+      onContactAdded(res.data);
       onClose();
-    } catch (err) {
-      console.error('Error creating contact:', err);
+    } catch (err: any) {
+      console.error('❌ Error creating contact:', err.response || err);
+      alert(
+        'Failed to create contact: ' +
+          (err.response?.data?.message || err.message)
+      );
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-md shadow-md w-[90%] max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md">
         <h3 className="text-xl font-semibold mb-4">New Contact</h3>
-        <div className="space-y-3">
-          <input name="name" placeholder="Name" onChange={handleChange} className="input" />
-          <input name="email" placeholder="Email" onChange={handleChange} className="input" />
-          <input name="phone" placeholder="Phone" onChange={handleChange} className="input" />
-          <input name="company" placeholder="Company" onChange={handleChange} className="input" />
+        <input
+          name="name"
+          placeholder="Name"
+          value={contact.name}
+          onChange={handleChange}
+          className="w-full mb-3 p-2 border rounded"
+        />
+        <input
+          name="email"
+          placeholder="Email"
+          type="email"
+          value={contact.email}
+          onChange={handleChange}
+          className="w-full mb-3 p-2 border rounded"
+        />
+        <input
+          name="phone"
+          placeholder="Phone"
+          value={contact.phone}
+          onChange={handleChange}
+          className="w-full mb-3 p-2 border rounded"
+        />
+        <input
+          name="company"
+          placeholder="Company"
+          value={contact.company}
+          onChange={handleChange}
+          className="w-full mb-3 p-2 border rounded"
+        />
+        <div className="mb-3">
+          <label className="block mb-1">Tags (press Enter to add)</label>
           <input
             name="tags"
-            placeholder="Tags (comma-separated)"
-            onChange={handleChange}
-            className="input"
+            placeholder="e.g. Investor"
+            value={tagInput}
+            onChange={e => setTagInput(e.target.value)}
+            onKeyDown={handleTagKey}
+            className="w-full p-2 border rounded"
           />
-          <textarea
-            name="notes"
-            placeholder="Notes"
-            onChange={handleChange}
-            className="input"
-          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {contact.tags.map(t => (
+              <span key={t} className="bg-gray-200 px-2 py-1 rounded text-sm">
+                {t}
+              </span>
+            ))}
+          </div>
         </div>
-        <div className="mt-4 flex justify-end gap-3">
-          <button onClick={onClose} className="text-gray-500">Cancel</button>
-          <button onClick={handleSubmit} className="bg-blue-600 text-white px-4 py-2 rounded">
-            Add
+        <textarea
+          name="notes"
+          placeholder="Notes"
+          value={contact.notes}
+          onChange={handleChange}
+          className="w-full mb-4 p-2 border rounded"
+        />
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={onClose}
+            className="bg-gray-300 px-4 py-2 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Create
           </button>
         </div>
       </div>

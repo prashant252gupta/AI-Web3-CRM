@@ -1,54 +1,77 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
+import api from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import NewDealModal from '@/components/NewDealModal';
 import EditDealModal from '@/components/EditDealModal';
 import DealCard from '@/components/DealCard';
 
-interface ContactOption { _id: string; name: string; }
+interface ContactOption {
+  _id: string;
+  name: string;
+}
+
 interface Deal {
-  _id:     string;
-  title:   string;
-  status:  string;
-  value:   string;
-  stage:   string;
+  _id:       string;
+  title:     string;
+  status:    string;
+  value:     number | string;
+  stage:     string;
   contactId?: string | { _id: string; name: string };
 }
 
 export default function DealsPage() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [contacts, setContacts] = useState<ContactOption[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [newDeal, setNewDeal] = useState<Deal>({
-    _id:'', title:'', status:'', value:'', stage:'', contactId:''
+  const { token } = useAuth();
+
+  const [deals, setDeals]           = useState<Deal[]>([]);
+  const [contacts, setContacts]     = useState<ContactOption[]>([]);
+  const [showModal, setShowModal]   = useState(false);
+  const [newDeal, setNewDeal]       = useState<Deal>({
+    _id: '', title: '', status: '', value: '', stage: '', contactId: ''
   });
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
 
-  // search & filter state
-  const [searchTerm, setSearchTerm] = useState('');
+  // Filters
+  const [searchTerm, setSearchTerm]     = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterStage, setFilterStage] = useState('');
+  const [filterStage, setFilterStage]   = useState('');
 
+  // Fetch contacts & deals once we have a token
   useEffect(() => {
-    axios.get<ContactOption[]>('http://localhost:5000/api/contacts')
-      .then(res => setContacts(res.data))
-      .catch(console.error);
-    axios.get<Deal[]>('http://localhost:5000/api/deals')
-      .then(res => setDeals(res.data))
-      .catch(console.error);
-  }, []);
+    if (!token) return;
 
-  // filtered list
+    api.get<ContactOption[]>('/contacts')
+    .then(res => setContacts(res.data))
+    .catch(err => {
+      const status = err.response?.status;
+      const data   = err.response?.data;
+      console.error('Fetch contacts error', status, data || err);
+      alert(`Failed to load contacts (${status}): ${JSON.stringify(data)}`);
+    });
+
+    api.get<Deal[]>('/deals')
+      .then(res => setDeals(res.data))
+      .catch(err => {
+        const status = err.response?.status;
+        const data   = err.response?.data;
+        console.error('Fetch deals error', status, data || err);
+        alert(`Failed to load deals (${status}): ${JSON.stringify(data)}`);
+      });
+  }, [token]);
+
+  // Filter logic
   const filteredDeals = useMemo(() => {
     return deals.filter(d => {
-      const matchesSearch = d.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = d.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus ? d.status === filterStatus : true;
-      const matchesStage  = filterStage  ? d.stage === filterStage   : true;
+      const matchesStage  = filterStage  ? d.stage   === filterStage  : true;
       return matchesSearch && matchesStatus && matchesStage;
     });
   }, [deals, searchTerm, filterStatus, filterStage]);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (editingDeal) {
       setEditingDeal({ ...editingDeal, [name]: value });
@@ -58,22 +81,24 @@ export default function DealsPage() {
   };
 
   const handleSubmit = async () => {
-    const { _id, ...data } = newDeal;
+    const { _id, value, ...rest } = newDeal;
     const payload: any = {
-      title: data.title,
-      status: data.status,
-      value: Number(data.value),
-      stage: data.stage,
-      ...(data.contactId && { contactId: data.contactId })
+      ...rest,
+      value: Number(value),
+      ...(newDeal.contactId && { contactId: newDeal.contactId })
     };
+
     try {
-      const res = await axios.post<Deal>('http://localhost:5000/api/deals', payload);
+      const res = await api.post<Deal>('/deals', payload);
       setDeals(d => [...d, res.data]);
       setShowModal(false);
       setNewDeal({ _id:'', title:'', status:'', value:'', stage:'', contactId:'' });
-    } catch (err) {
-      console.error(err);
-      alert('Error creating deal');
+    } catch (err: any) {
+      console.error('Create deal failed:', err.response || err);
+      alert(
+        `Error creating deal: ` + 
+        `${err.response?.status} ${err.response?.data?.message || err.message}`
+      );
     }
   };
 
@@ -84,33 +109,37 @@ export default function DealsPage() {
       status: editingDeal.status,
       value: Number(editingDeal.value),
       stage: editingDeal.stage,
-      ...(editingDeal.contactId && { 
+      ...(editingDeal.contactId && {
         contactId: typeof editingDeal.contactId === 'object'
           ? editingDeal.contactId._id
-          : editingDeal.contactId 
+          : editingDeal.contactId
       })
     };
+
     try {
-      const res = await axios.put<Deal>(
-        `http://localhost:5000/api/deals/${editingDeal._id}`,
-        payload
-      );
+      const res = await api.put<Deal>(`/deals/${editingDeal._id}`, payload);
       setDeals(d => d.map(x => x._id === res.data._id ? res.data : x));
       setEditingDeal(null);
-    } catch (err) {
-      console.error(err);
-      alert('Error updating deal');
+    } catch (err: any) {
+      console.error('Update deal failed:', err.response || err);
+      alert(
+        `Error updating deal: ` +
+        `${err.response?.status} ${err.response?.data?.message || err.message}`
+      );
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Delete this deal?')) {
-      try {
-        await axios.delete(`http://localhost:5000/api/deals/${id}`);
-        setDeals(d => d.filter(x => x._id !== id));
-      } catch {
-        alert('Error deleting deal');
-      }
+    if (!confirm('Delete this deal?')) return;
+    try {
+      await api.delete(`/deals/${id}`);
+      setDeals(d => d.filter(x => x._id !== id));
+    } catch (err: any) {
+      console.error('Delete deal failed:', err.response || err);
+      alert(
+        `Error deleting deal: ` +
+        `${err.response?.status} ${err.response?.data?.message || err.message}`
+      );
     }
   };
 
@@ -126,6 +155,8 @@ export default function DealsPage() {
           + New Deal
         </button>
       </div>
+
+      {/* Filter inputs */}
       <div className="flex flex-wrap gap-4">
         <input
           type="text"

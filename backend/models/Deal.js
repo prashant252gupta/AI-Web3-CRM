@@ -1,3 +1,4 @@
+// backend/models/Deal.js
 import mongoose from 'mongoose';
 
 const dealSchema = new mongoose.Schema({
@@ -5,7 +6,6 @@ const dealSchema = new mongoose.Schema({
     status: { type: String, required: true },
     value: { type: Number, required: true },
     stage: { type: String, required: true },
-    // ← new field: reference to a Contact
     contactId: { type: mongoose.Schema.Types.ObjectId, ref: 'Contact' },
     createdAt: { type: Date, default: Date.now },
 });
